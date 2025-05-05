@@ -1,16 +1,17 @@
 #!/bin/bash
 
+# Kopfzeile wie lsof
 printf "%-9s %-9s %-20s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
 
-# TCP Status Mapping
+# TCP-Status-Codes übersetzen
 declare -A states=(
     [01]="ESTABLISHED" [02]="SYN_SENT" [03]="SYN_RECV"
-    [04]="FIN_WAIT1" [05]="FIN_WAIT2" [06]="TIME_WAIT"
-    [07]="CLOSE" [08]="CLOSE_WAIT" [09]="LAST_ACK"
-    [0A]="LISTEN" [0B]="CLOSING"
+    [04]="FIN_WAIT1"   [05]="FIN_WAIT2" [06]="TIME_WAIT"
+    [07]="CLOSE"       [08]="CLOSE_WAIT" [09]="LAST_ACK"
+    [0A]="LISTEN"      [0B]="CLOSING"
 )
 
-# IP und Port aus hex umwandeln
+# IP:Port aus Hex in lesbar umwandeln
 parse_addr() {
     ip_hex=${1%:*}
     port_hex=${1#*:}
@@ -19,31 +20,37 @@ parse_addr() {
     echo "$ip_dec:$port_dec"
 }
 
-# Mapping: inode -> "PID CMD USER"
+# Mapping: Inode → "PID CMD USER"
 declare -A inode_map
 
+# Alle Prozesse durchgehen
 for pid_dir in /proc/[0-9]*; do
     pid=${pid_dir##*/}
-    cmd=$(cat "$pid_dir/comm" 2>/dev/null)
-    uid=$(awk '/Uid:/ {print $2}' "$pid_dir/status" 2>/dev/null)
+
+    # Kommando und Benutzer
+    cmd=$(cat "$pid_dir/comm" 2>/dev/null) || continue
+    uid=$(awk '/Uid:/ {print $2}' "$pid_dir/status" 2>/dev/null) || continue
     user=$(getent passwd "$uid" | cut -d: -f1)
 
     [ -z "$cmd" ] && continue
 
+    # Alle File-Deskriptoren des Prozesses
     for fd in "$pid_dir"/fd/*; do
         [ -L "$fd" ] || continue
-        link=$(readlink "$fd" 2>/dev/null)
-        [[ "$link" =~ socket:\[\d+\] ]] || continue
-        inode=$(echo "$link" | grep -oP '\[\K[0-9]+')
+        link=$(readlink "$fd" 2>/dev/null) || continue
+
+        echo "$link" | grep -qE '^socket:\[[0-9]+\]$' || continue
+        inode=$(echo "$link" | sed -n 's/^socket:\[\([0-9]\+\)\]$/\1/p')
+        [ -n "$inode" ] || continue
+
         inode_map["$inode"]="$pid $cmd $user"
     done
 done
 
-##debugging
-echo "Inode map enthält ${#inode_map[@]} Einträge"
+# Debug-Ausgabe optional:
+# echo "Inodes gefunden: ${#inode_map[@]}"
 
-
-# Jetzt /proc/net/tcp durchgehen
+# TCP-Verbindungen durchgehen
 tail -n +2 /proc/net/tcp | while read -r line; do
     fields=($line)
     local_addr_parsed=$(parse_addr "${fields[1]}")
