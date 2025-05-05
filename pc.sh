@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ausgabe-Header wie bei lsof
-printf "%-9s %-6s %-6s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
+printf "%-9s %-8s %-6s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
 
 # TCP Status Mapping
 declare -A states=(
