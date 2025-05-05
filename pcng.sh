@@ -1,17 +1,24 @@
 #!/bin/bash
 
-# Kopfzeile wie lsof
+# table headline
 printf "%-9s %-9s %-20s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
 
-# TCP-Status-Codes übersetzen
+# TCP-Status-Codes
 declare -A states=(
-    [01]="ESTABLISHED" [02]="SYN_SENT" [03]="SYN_RECV"
-    [04]="FIN_WAIT1"   [05]="FIN_WAIT2" [06]="TIME_WAIT"
-    [07]="CLOSE"       [08]="CLOSE_WAIT" [09]="LAST_ACK"
-    [0A]="LISTEN"      [0B]="CLOSING"
+    [01]="ESTABLISHED" 
+    [02]="SYN_SENT" 
+    [03]="SYN_RECV"
+    [04]="FIN_WAIT1"   
+    [05]="FIN_WAIT2"
+    [06]="TIME_WAIT"
+    [07]="CLOSE"       
+    [08]="CLOSE_WAIT" 
+    [09]="LAST_ACK"
+    [0A]="LISTEN"     
+    [0B]="CLOSING"
 )
 
-# IP:Port aus Hex in lesbar umwandeln
+# Convert IP:Port from hex to readable format
 parse_addr() {
     ip_hex=${1%:*}
     port_hex=${1#*:}
@@ -23,18 +30,18 @@ parse_addr() {
 # Mapping: Inode → "PID CMD USER"
 declare -A inode_map
 
-# Alle Prozesse durchgehen
+# Go through all processes
 for pid_dir in /proc/[0-9]*; do
     pid=${pid_dir##*/}
 
-    # Kommando und Benutzer
+    # command and user
     cmd=$(cat "$pid_dir/comm" 2>/dev/null) || continue
     uid=$(awk '/Uid:/ {print $2}' "$pid_dir/status" 2>/dev/null) || continue
     user=$(getent passwd "$uid" | cut -d: -f1)
 
     [ -z "$cmd" ] && continue
 
-    # Alle File-Deskriptoren des Prozesses
+    # Go through all file descriptors of the process.
     for fd in "$pid_dir"/fd/*; do
         [ -L "$fd" ] || continue
         link=$(readlink "$fd" 2>/dev/null) || continue
@@ -47,10 +54,10 @@ for pid_dir in /proc/[0-9]*; do
     done
 done
 
-# Debug-Ausgabe optional:
-# echo "Inodes gefunden: ${#inode_map[@]}"
+# Debug:
+# echo "Inodes found: ${#inode_map[@]}"
 
-# TCP-Verbindungen durchgehen
+# Go through TCP connections
 tail -n +2 /proc/net/tcp | while read -r line; do
     fields=($line)
     local_addr_parsed=$(parse_addr "${fields[1]}")
