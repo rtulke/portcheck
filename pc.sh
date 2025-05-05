@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ausgabe-Header wie bei lsof
-printf "%-9s %-8s %-6s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
+printf "%-9s %-9s %-20s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS" "REMOTE ADDRESS" "STATE"
 
 # TCP Status Mapping
 declare -A states=(
@@ -51,7 +51,7 @@ tail -n +2 /proc/net/tcp | while read -r line; do
             if [[ "$link" == socket:* ]]; then
                 fd_inode=$(echo "$link" | grep -oP '\[\K[0-9]+')
                 if [[ "$fd_inode" == "$inode" ]]; then
-                    printf "%-9s %-6s %-6s %-21s %-21s %s\n" "$cmdline" "${pid##*/}" "$user" "$local_addr_parsed" "$rem_addr_parsed" "$state"
+                    printf "%-9s %-9s %-20s %-21s %-21s %s\n" "$cmdline" "${pid##*/}" "$user" "$local_addr_parsed" "$rem_addr_parsed" "$state"
                     break
                 fi
             fi
