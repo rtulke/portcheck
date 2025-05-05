@@ -40,7 +40,7 @@ tail -n +2 /proc/net/tcp | while read -r line; do
 
     # Look through all PIDs
     for pid in $(ls -d /proc/[0-9]* 2>/dev/null); do
-        cmdline=$(cat "$pid/comm" 2>/dev/null)
+        read -r cmdline < "$pid/comm" 2>/dev/null
         uid=$(awk '/Uid:/ {print $2}' "$pid/status" 2>/dev/null)
         user=$(getent passwd "$uid" | awk -F: '{print $1}')
 
