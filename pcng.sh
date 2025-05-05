@@ -39,6 +39,10 @@ for pid_dir in /proc/[0-9]*; do
     done
 done
 
+##debugging
+echo "Inode map enthält ${#inode_map[@]} Einträge"
+
+
 # Jetzt /proc/net/tcp durchgehen
 tail -n +2 /proc/net/tcp | while read -r line; do
     fields=($line)
