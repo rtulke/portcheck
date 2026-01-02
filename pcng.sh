@@ -5,16 +5,16 @@ printf "%-9s %-9s %-20s %-21s %-21s %s\n" "COMMAND" "PID" "USER" "LOCAL ADDRESS"
 
 # TCP-Status-Codes
 declare -A states=(
-    [01]="ESTABLISHED" 
-    [02]="SYN_SENT" 
+    [01]="ESTABLISHED"
+    [02]="SYN_SENT"
     [03]="SYN_RECV"
-    [04]="FIN_WAIT1"   
+    [04]="FIN_WAIT1"
     [05]="FIN_WAIT2"
     [06]="TIME_WAIT"
-    [07]="CLOSE"       
-    [08]="CLOSE_WAIT" 
+    [07]="CLOSE"
+    [08]="CLOSE_WAIT"
     [09]="LAST_ACK"
-    [0A]="LISTEN"     
+    [0A]="LISTEN"
     [0B]="CLOSING"
 )
 
@@ -25,6 +25,28 @@ parse_addr() {
     ip_dec=$(printf "%d.%d.%d.%d" 0x${ip_hex:6:2} 0x${ip_hex:4:2} 0x${ip_hex:2:2} 0x${ip_hex:0:2})
     port_dec=$((16#$port_hex))
     echo "$ip_dec:$port_dec"
+}
+
+parse_addr6() {
+    ip_hex=${1%:*}
+    port_hex=${1#*:}
+
+    # Reorder bytes per 32-bit word
+    ip=$(printf "%s:%s:%s:%s:%s:%s:%s:%s" \
+        "${ip_hex:6:2}${ip_hex:4:2}" \
+        "${ip_hex:2:2}${ip_hex:0:2}" \
+        "${ip_hex:14:2}${ip_hex:12:2}" \
+        "${ip_hex:10:2}${ip_hex:8:2}" \
+        "${ip_hex:22:2}${ip_hex:20:2}" \
+        "${ip_hex:18:2}${ip_hex:16:2}" \
+        "${ip_hex:30:2}${ip_hex:28:2}" \
+        "${ip_hex:26:2}${ip_hex:24:2}"
+    )
+
+    port=$((16#$port_hex))
+
+    # Normalize + compress
+    printf "[%s]:%d\n" "$(printf "%x:%x:%x:%x:%x:%x:%x:%x" 0x${ip//:/ 0x})" "$port"
 }
 
 # Mapping: Inode → "PID CMD USER"
@@ -69,5 +91,21 @@ tail -n +2 /proc/net/tcp | while read -r line; do
     if [[ -n "${inode_map[$inode]}" ]]; then
         read -r pid cmd user <<< "${inode_map[$inode]}"
         printf "%-9s %-9s %-20s %-21s %-21s %s\n" "$cmd" "$pid" "$user" "$local_addr_parsed" "$rem_addr_parsed" "$state"
+    fi
+done
+
+# Go through TCP6 connections (IPv6)
+tail -n +2 /proc/net/tcp6 | while read -r line; do
+    fields=($line)
+    local_addr_parsed=$(parse_addr6 "${fields[1]}")
+    rem_addr_parsed=$(parse_addr6 "${fields[2]}")
+    state_code="${fields[3]}"
+    inode="${fields[9]}"
+    state=${states[$state_code]}
+
+    if [[ -n "${inode_map[$inode]}" ]]; then
+        read -r pid cmd user <<< "${inode_map[$inode]}"
+        printf "%-9s %-9s %-20s %-21s %-21s %s\n" \
+            "$cmd" "$pid" "$user" "$local_addr_parsed" "$rem_addr_parsed" "$state"
     fi
 done
