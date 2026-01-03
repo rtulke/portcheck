@@ -4,13 +4,13 @@ A lightweight, dependency-free Bash script to display active TCP and TCP6 networ
 
 ## Features
 
-- 🚀 **Zero Dependencies** - Uses only Bash and standard Unix tools
-- 📊 **Multiple Output Formats** - Table, CSV, and JSON support
-- 🌐 **IPv4 & IPv6 Support** - Handles both TCP and TCP6 connections
-- 🎨 **Dynamic Table Widths** - Automatically adjusts column widths
-- 🔧 **RFC-Compliant IPv6** - Proper IPv6 address compression (RFC 5952)
-- ⚡ **Performance Optimized** - Single-pass processing for efficiency
-- 🛡️ **Robust Error Handling** - Graceful handling of missing features
+- **Zero Dependencies** - Uses only Bash and standard Unix tools
+- **Multiple Output Formats** - Table, CSV, and JSON support
+- **IPv4 & IPv6 Support** - Handles both TCP and TCP6 connections
+- **Dynamic Table Widths** - Automatically adjusts column widths
+- **RFC-Compliant IPv6** - Proper IPv6 address compression (RFC 5952)
+- **Performance Optimized** - Single-pass processing for efficiency
+- **Robust Error Handling** - Graceful handling of missing features
 
 ## Requirements
 
