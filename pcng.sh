@@ -209,13 +209,11 @@ if [[ $EUID -ne 0 ]]; then
     echo "Note: Not running as root. Only connections from your own processes will be visible." >&2
 fi
 
-# ---------------------------------------------------------------------------
 # Address decoding
 #
 # /proc/net/* stores addresses as little-endian hex, so the byte order has to
 # be reversed on read: IPv4 across the whole word, IPv6 within each of the
 # four 32-bit words.
-# ---------------------------------------------------------------------------
 
 # Convert IP:Port from hex to readable format -> $REPLY
 parse_addr() {
@@ -318,14 +316,12 @@ parse_addr6() {
     printf -v REPLY "[%s]:%d" "$ip" "0x$port"
 }
 
-# ---------------------------------------------------------------------------
 # Phase 1: read the connection tables
 #
 # This runs before the process scan so that the (expensive) inode -> process
 # mapping can be restricted to inodes that actually appear in a connection.
 # State, port and user filters are applied here, on the raw hex fields, so
 # that filtered-out sockets never reach the process scan at all.
-# ---------------------------------------------------------------------------
 
 declare -A want=()          # inode -> 1, the inodes worth looking up
 declare -a rec_proto rec_v6 rec_local rec_rem rec_state rec_uid rec_inode
@@ -388,10 +384,7 @@ for table in "${TABLES[@]}"; do
     read_conn_table "$file" "$proto" "$is_v6"
 done
 
-# ---------------------------------------------------------------------------
 # Phase 2: map socket inodes to processes
-# ---------------------------------------------------------------------------
-
 declare -A pid_of=() cmd_of=()
 
 for pid_dir in /proc/[0-9]*; do
